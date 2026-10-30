@@ -6,9 +6,9 @@ import { LedgerDirection } from "../wallet/ledger-direction";
 
 export interface WagerTransactionSnapshot {
 	status: WagerTransactionStatus;
-	referenceTransactionId?: string;
-	failureCode?: FailureCode;
-	processedAt?: Date;
+	referenceTransactionId?: string | undefined;
+	failureCode?: FailureCode | undefined;
+	processedAt?: Date | undefined;
 }
 
 export interface WagerTransactionState extends WagerTransactionSnapshot {
@@ -23,12 +23,12 @@ export interface WagerTransactionState extends WagerTransactionSnapshot {
 	gameId: string;
 	kind: WagerTransactionKind;
 	money: MoneyProps;
-	referenceExternalTransactionId?: string;
+	referenceExternalTransactionId?: string | undefined;
 	createdAt: Date;
 	referenceAttempts: number;
-	referenceNextAttemptAt?: Date;
-	resultingBalance?: MoneyProps;
-	resultingVersion?: number;
+	referenceNextAttemptAt?: Date | undefined;
+	resultingBalance?: MoneyProps | undefined;
+	resultingVersion?: number | undefined;
 }
 
 export interface CreateWagerTransactionProps {

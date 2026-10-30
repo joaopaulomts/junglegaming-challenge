@@ -8,8 +8,8 @@ export interface OutboxMessageState {
 	payload: Readonly<Record<string, unknown>>;
 	occurredAt: Date;
 	attempts: number;
-	nextAttemptAt?: Date;
-	publishedAt?: Date;
+	nextAttemptAt?: Date | undefined;
+	publishedAt?: Date | undefined;
 }
 
 export interface EnqueueOutboxProps {
