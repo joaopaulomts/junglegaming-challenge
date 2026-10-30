@@ -43,7 +43,7 @@ export interface CreateWagerTransactionProps {
 	gameId: string;
 	kind: WagerTransactionKind;
 	money: Money;
-	referenceExternalTransactionId?: string;
+	referenceExternalTransactionId?: string | undefined;
 }
 
 const TERMINAL_STATUSES = new Set<WagerTransactionStatus>([

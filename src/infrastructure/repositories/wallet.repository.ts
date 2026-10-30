@@ -26,6 +26,10 @@ export class WalletRepository {
 		return row ? toWallet(row) : null;
 	}
 
+	async findDuplicate(playerId: string, currency: string): Promise<boolean> {
+		return (await this.em.count(WalletEntity, { playerId, currency })) > 0;
+	}
+
 	async insert(wallet: Wallet): Promise<void> {
 		const row = this.em.create(WalletEntity, {
 			id: wallet.id,
@@ -85,13 +89,25 @@ export class LedgerEntryRepository {
 		this.em.persist(row);
 	}
 
-	async listByWallet(walletId: string, limit: number, afterCursor?: { createdAt: Date; id: string }): Promise<WalletLedgerEntry[]> {
+	async listByWallet(walletId: string, limit: number, cursor?: { createdAt: Date; id: string }): Promise<WalletLedgerEntry[]> {
+		type LedgerWhere = { walletId: string; createdAt?: unknown; id?: unknown; $and?: unknown };
+		let where: LedgerWhere = { walletId };
+		if (cursor) {
+			const { createdAt, id } = cursor;
+			where = {
+				$and: [
+					{ walletId },
+					{ $or: [{ createdAt: { $lt: createdAt } }, { createdAt, id: { $lt: id } }] },
+				],
+			} as LedgerWhere;
+		}
 		const rows = await this.em.find(
 			WalletLedgerEntryEntity,
-			afterCursor
-				? { walletId, createdAt: { $lt: afterCursor.createdAt }, id: { $lt: afterCursor.id } }
-				: { walletId },
-			{ orderBy: [{ createdAt: "desc" }, { id: "desc" }], limit },
+			where as never,
+			{
+				orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+				limit,
+			},
 		);
 		return rows.map(toLedgerEntry);
 	}

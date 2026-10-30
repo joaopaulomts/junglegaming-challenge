@@ -19,6 +19,21 @@ export class WagerTransactionRepository {
 		return row ? toDomain(row) : null;
 	}
 
+	/** Locks the transaction row itself (SELECT ... FOR UPDATE) — used by the pending-reference worker. */
+	async lockById(id: string): Promise<WagerTransaction | null> {
+		const row = await this.em.findOne(WagerTransactionEntity, { id }, { lockMode: LockMode.PESSIMISTIC_WRITE });
+		return row ? toDomain(row) : null;
+	}
+
+	async hasSuccessfulReversalOf(referenceTransactionId: string, kind: WagerTransactionKind): Promise<boolean> {
+		const count = await this.em.count(WagerTransactionEntity, {
+			referenceTransactionId,
+			kind,
+			status: WagerTransactionStatus.Processed,
+		});
+		return count > 0;
+	}
+
 	async findByIdempotencyKey(key: string): Promise<WagerTransaction | null> {
 		const row = await this.em.findOne(WagerTransactionEntity, { idempotencyKey: key });
 		return row ? toDomain(row) : null;
@@ -107,40 +122,6 @@ export class WagerTransactionRepository {
 			status: WagerTransactionStatus.Processed,
 		});
 		return row ? toDomain(row) : null;
-	}
-
-	async findPendingReferences(limit: number, now: Date): Promise<WagerTransaction[]> {
-		const rows = await this.em.find(
-			WagerTransactionEntity,
-			{
-				status: WagerTransactionStatus.PendingReference,
-				referenceNextAttemptAt: { $lte: now },
-			},
-			{
-				orderBy: { referenceNextAttemptAt: "asc" },
-				limit,
-			},
-		);
-		return rows.map(toDomain);
-	}
-
-	async listForReconciliationPending(limit: number, now: Date): Promise<WagerTransaction[]> {
-		return this.lockPendingReferences(limit, now);
-	}
-
-	async lockPendingReferences(limit: number, now: Date): Promise<WagerTransaction[]> {
-		const rows = await this.em.find(
-			WagerTransactionEntity,
-			{
-				status: WagerTransactionStatus.PendingReference,
-				referenceNextAttemptAt: { $lte: now },
-			},
-			{
-				orderBy: { referenceNextAttemptAt: "asc" },
-				limit,
-			},
-		);
-		return rows.map(toDomain);
 	}
 
 	/** Persists the mutable state of a domain transaction (status, refs, failure). */
