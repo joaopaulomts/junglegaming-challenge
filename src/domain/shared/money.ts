@@ -26,7 +26,9 @@ export class Money {
 		if (typeof props.currency !== "string" || !CURRENCY_CODE.test(props.currency)) {
 			throw new InvalidMoneyError(`currency must be an ISO-4217 code, got "${String(props.currency)}"`);
 		}
-		const amount = props.amount.trim();
+		// Strict: no normalization. A trailing space is a malformed payload that
+		// must be rejected at the boundary, not silently tolerated.
+		const amount = props.amount;
 		if (amount.length === 0) {
 			throw new InvalidMoneyError("amount must not be empty");
 		}
