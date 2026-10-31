@@ -15,6 +15,15 @@ export function runWithCorrelation<T>(context: CorrelationContext, fn: () => Pro
 	return storage.run(context, fn);
 }
 
+/**
+ * Attaches the context to the *current* async frame — used at transport
+ * boundaries (Express middleware) where the downstream chain is invoked
+ * synchronously through next().
+ */
+export function enterCorrelation(context: CorrelationContext): void {
+	storage.enterWith(context);
+}
+
 export function correlation(): CorrelationContext {
 	return storage.getStore() ?? { correlationId: "unset" };
 }

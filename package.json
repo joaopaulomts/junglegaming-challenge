@@ -9,15 +9,17 @@
   },
   "scripts": {
     "build": "bun run tsc --build tsconfig.json",
-    "start": "bun run dist/main.js",
+    "start": "bun src/main.ts",
     "dev": "bun --hot src/main.ts",
     "lint": "bunx tsc --noEmit",
     "test": "bun test",
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
     "test:concurrency": "bun test tests/concurrency",
-    "migrate": "bun run src/infrastructure/database/migrate.ts up",
-    "migrate:down": "bun run src/infrastructure/database/migrate.ts down"
+    "migration:up": "bun run src/infrastructure/database/migrate.ts up",
+    "migration:down": "bun run src/infrastructure/database/migrate.ts down",
+    "migrate": "bun run migration:up",
+    "migrate:down": "bun run migration:down"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.700.0",

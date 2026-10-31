@@ -12,9 +12,7 @@ export function sqsClient(): SQSClient {
 	});
 }
 
-export const REQUEST_QUEUE_URL =
-	process.env.SQS_REQUEST_QUEUE_URL ?? "http://sqs.localhost.localstack.cloud:4566/000000000000/wager-transactions.fifo";
-export const DLQ_QUEUE_URL =
-	process.env.SQS_DLQ_QUEUE_URL ?? "http://sqs.localhost.localstack.cloud:4566/000000000000/wager-transactions-dlq.fifo";
-export const EVENTS_QUEUE_URL =
-	process.env.SQS_EVENTS_QUEUE_URL ?? "http://sqs.localhost.localstack.cloud:4566/000000000000/integration-events.fifo";
+const QUEUE_BASE = "http://sqs.sa-east-1.localhost.localstack.cloud:4566/000000000000";
+export const REQUEST_QUEUE_URL = process.env.SQS_REQUEST_QUEUE_URL ?? `${QUEUE_BASE}/wager-transactions.fifo`;
+export const DLQ_QUEUE_URL = process.env.SQS_DLQ_QUEUE_URL ?? `${QUEUE_BASE}/wager-transactions-dlq.fifo`;
+export const EVENTS_QUEUE_URL = process.env.SQS_EVENTS_QUEUE_URL ?? `${QUEUE_BASE}/integration-events.fifo`;

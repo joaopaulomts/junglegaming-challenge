@@ -40,6 +40,9 @@ export class Money {
 		if (value.abs().greaterThan(MAX_AMOUNT)) {
 			throw new InvalidMoneyError(`amount exceeds maximum ${MAX_AMOUNT}, got "${props.amount}"`);
 		}
+		if (value.isNegative()) {
+			throw new InvalidMoneyError(`amount must not be negative in an input contract, got "${props.amount}"`);
+		}
 		return new Money(value, props.currency);
 	}
 
