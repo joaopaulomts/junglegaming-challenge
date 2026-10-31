@@ -1,6 +1,6 @@
 import { Money, type MoneyProps } from "../shared/money";
-import { InvalidTransactionStateError } from "../shared/errors";
-import type { FailureCode } from "./failure-codes";
+import { BusinessRuleViolationError, InvalidTransactionStateError } from "../shared/errors";
+import { FailureCode } from "./failure-codes";
 import { WagerTransactionKind, WagerTransactionStatus } from "./kinds";
 import { LedgerDirection } from "../wallet/ledger-direction";
 
@@ -198,6 +198,26 @@ export class WagerTransaction {
 
 	requiresReference(): boolean {
 		return this.kind === WagerTransactionKind.Refund || this.kind === WagerTransactionKind.Rollback;
+	}
+
+	static allowedReferenceKinds(kind: WagerTransactionKind): readonly WagerTransactionKind[] {
+		switch (kind) {
+			case WagerTransactionKind.Refund:
+				return [WagerTransactionKind.Bet];
+			case WagerTransactionKind.Rollback:
+				return [WagerTransactionKind.Bet, WagerTransactionKind.Win, WagerTransactionKind.Refund];
+			default:
+				throw new InvalidTransactionStateError(`${kind} does not reference other transactions`);
+		}
+	}
+
+	assertReferenceKind(referenceKind: WagerTransactionKind): void {
+		if (!WagerTransaction.allowedReferenceKinds(this.kind).includes(referenceKind)) {
+			throw new BusinessRuleViolationError(
+				FailureCode.REFERENCE_KIND_NOT_ALLOWED,
+				`${this.kind} cannot reference ${referenceKind}`,
+			);
+		}
 	}
 
 	matchesPayload(payloadHash: string): boolean {

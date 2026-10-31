@@ -6,6 +6,8 @@ export const FailureCode = {
 	REFERENCE_ALREADY_REVERSED: "REFERENCE_ALREADY_REVERSED",
 	REFERENCE_AMOUNT_MISMATCH: "REFERENCE_AMOUNT_MISMATCH",
 	REFERENCE_CONTEXT_MISMATCH: "REFERENCE_CONTEXT_MISMATCH",
+	PLAYER_WALLET_MISMATCH: "PLAYER_WALLET_MISMATCH",
+	REFERENCE_KIND_NOT_ALLOWED: "REFERENCE_KIND_NOT_ALLOWED",
 	MISSING_REFERENCE: "MISSING_REFERENCE",
 	INVALID_KIND: "INVALID_KIND",
 	WALLET_NOT_FOUND: "WALLET_NOT_FOUND",
@@ -65,6 +67,19 @@ export const FAILURE_CODE_GUIDANCE: Record<FailureCode, FailureCodeGuidance> = {
 		payloadFixable: true,
 		httpStatus: 422,
 		description: "The reference must belong to the same provider, player, wallet, currency and round.",
+	},
+	PLAYER_WALLET_MISMATCH: {
+		retryable: false,
+		payloadFixable: true,
+		httpStatus: 422,
+		description: "The wallet does not belong to the supplied playerId.",
+	},
+	REFERENCE_KIND_NOT_ALLOWED: {
+		retryable: false,
+		payloadFixable: true,
+		httpStatus: 422,
+		description:
+			"The reference kind is not allowed for this operation: REFUND may only reference BET; ROLLBACK may only reference BET, WIN or REFUND.",
 	},
 	MISSING_REFERENCE: {
 		retryable: false,

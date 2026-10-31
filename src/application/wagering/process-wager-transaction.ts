@@ -1,7 +1,6 @@
 import { Money, type MoneyProps } from "../../domain/shared/money";
 import { BusinessRuleViolationError } from "../../domain/shared/errors";
 import { Wallet } from "../../domain/wallet/wallet";
-import { WalletLedgerEntry } from "../../domain/wallet/ledger-entry";
 import { LedgerDirection } from "../../domain/wallet/ledger-direction";
 import { WagerTransaction } from "../../domain/wagering/wager-transaction";
 import { WagerTransactionKind, WagerTransactionStatus } from "../../domain/wagering/kinds";
@@ -287,21 +286,13 @@ export class ProcessWagerTransactionUseCase {
 		}
 
 		const direction = tx.ledgerDirectionFor(reference);
+		const ledgerEntryId = newId();
 		try {
 			const mutated =
 				direction === LedgerDirection.Credit
-					? wallet.credit({ money: tx.money, occurredAt: now })
-					: wallet.debit({ money: tx.money, occurredAt: now });
-			const entry = WalletLedgerEntry.create({
-				id: newId(),
-				walletId: wallet.id,
-				transactionId: tx.id,
-				direction,
-				money: tx.money,
-				balanceBefore: mutated.balanceBefore,
-				balanceAfter: mutated.balanceAfter,
-				createdAt: now,
-			});
+					? wallet.credit({ transactionId: tx.id, entryId: ledgerEntryId, money: tx.money, occurredAt: now })
+					: wallet.debit({ transactionId: tx.id, entryId: ledgerEntryId, money: tx.money, occurredAt: now });
+			const entry = mutated.entry;
 			await repos.ledger.insert(entry);
 			await repos.wallets.applyMutation(wallet, mutated, now);
 			tx.markProcessed(reference?.id ?? undefined, now, mutated.balanceAfter.toJSON(), mutated.walletVersion);

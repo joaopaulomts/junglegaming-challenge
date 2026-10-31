@@ -1,6 +1,8 @@
 import { Money, type MoneyProps } from "../shared/money";
 import { BusinessRuleViolationError, InvalidEntityStateError } from "../shared/errors";
+import { WalletLedgerEntry } from "./ledger-entry";
 import { LedgerDirection } from "./ledger-direction";
+import { FailureCode } from "../wagering/failure-codes";
 
 export interface WalletState {
 	id: string;
@@ -19,21 +21,19 @@ export interface OpenWalletProps {
 }
 
 export interface WalletApplyProps {
+	transactionId: string;
+	entryId: string;
 	money: Money;
 	occurredAt: Date;
 }
 
 export interface WalletMutationResult {
+	entry: WalletLedgerEntry;
 	direction: LedgerDirection;
 	balanceBefore: Money;
 	balanceAfter: Money;
 	walletVersion: number;
 }
-
-export const WALLET_FAILURE_CODES = {
-	INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE",
-	CURRENCY_MISMATCH: "CURRENCY_MISMATCH",
-} as const;
 
 export class Wallet {
 	private constructor(
@@ -94,13 +94,16 @@ export class Wallet {
 		const balanceBefore = this._balance;
 		if (balanceBefore.isLessThan(props.money)) {
 			throw new BusinessRuleViolationError(
-				WALLET_FAILURE_CODES.INSUFFICIENT_BALANCE,
+				FailureCode.INSUFFICIENT_BALANCE,
 				`wallet ${this.id} balance ${balanceBefore.toString()} is less than ${props.money.toString()}`,
 			);
 		}
+		const balanceAfter = balanceBefore.subtract(props.money);
+		const entry = this.buildEntry(props, LedgerDirection.Debit, balanceBefore, balanceAfter);
 		return {
+			entry,
 			direction: LedgerDirection.Debit,
-			...this.applyChange(balanceBefore, balanceBefore.subtract(props.money), props.occurredAt),
+			...this.applyChange(balanceBefore, balanceAfter, props.occurredAt),
 		};
 	}
 
@@ -110,13 +113,38 @@ export class Wallet {
 			throw new InvalidEntityStateError("credit amount must be positive");
 		}
 		const balanceBefore = this._balance;
+		const balanceAfter = balanceBefore.add(props.money);
+		const entry = this.buildEntry(props, LedgerDirection.Credit, balanceBefore, balanceAfter);
 		return {
+			entry,
 			direction: LedgerDirection.Credit,
-			...this.applyChange(balanceBefore, balanceBefore.add(props.money), props.occurredAt),
+			...this.applyChange(balanceBefore, balanceAfter, props.occurredAt),
 		};
 	}
 
-	private applyChange(balanceBefore: Money, balanceAfter: Money, at: Date): Omit<WalletMutationResult, "direction"> {
+	private buildEntry(
+		props: WalletApplyProps,
+		direction: LedgerDirection,
+		balanceBefore: Money,
+		balanceAfter: Money,
+	): WalletLedgerEntry {
+		return WalletLedgerEntry.create({
+			id: props.entryId,
+			walletId: this.id,
+			transactionId: props.transactionId,
+			direction,
+			money: props.money,
+			balanceBefore,
+			balanceAfter,
+			createdAt: props.occurredAt,
+		});
+	}
+
+	private applyChange(
+		balanceBefore: Money,
+		balanceAfter: Money,
+		at: Date,
+	): Omit<WalletMutationResult, "direction" | "entry"> {
 		this._balance = balanceAfter;
 		this._version += 1;
 		this._updatedAt = at;
@@ -126,7 +154,7 @@ export class Wallet {
 	private assertOperationCurrency(money: Money): void {
 		if (money.currency !== this.currency) {
 			throw new BusinessRuleViolationError(
-				WALLET_FAILURE_CODES.CURRENCY_MISMATCH,
+				FailureCode.WALLET_CURRENCY_MISMATCH,
 				`wallet ${this.id} is ${this.currency}, got ${money.currency}`,
 			);
 		}

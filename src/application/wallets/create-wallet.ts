@@ -1,6 +1,5 @@
 import { Money, type MoneyProps } from "../../domain/shared/money";
 import { Wallet } from "../../domain/wallet/wallet";
-import { WalletLedgerEntry } from "../../domain/wallet/ledger-entry";
 import { LedgerDirection } from "../../domain/wallet/ledger-direction";
 import { WagerTransaction } from "../../domain/wagering/wager-transaction";
 import { WagerTransactionKind } from "../../domain/wagering/kinds";
@@ -80,17 +79,14 @@ async function recordOpening(repos: Repositories, wallet: Wallet, initialBalance
 		referenceExternalTransactionId: undefined,
 	});
 
-	const mutated = wallet.credit({ money: initialBalance, occurredAt: now });
-	const entry = WalletLedgerEntry.create({
-		id: newId(),
-		walletId: wallet.id,
+	const entryId = newId();
+	const mutated = wallet.credit({
 		transactionId: tx.id,
-		direction: LedgerDirection.Credit,
+		entryId,
 		money: initialBalance,
-		balanceBefore: mutated.balanceBefore,
-		balanceAfter: mutated.balanceAfter,
-		createdAt: now,
+		occurredAt: now,
 	});
+	const entry = mutated.entry;
 
 	tx.markProcessed(undefined, now, mutated.balanceAfter.toJSON(), mutated.walletVersion);
 	await repos.transactions.tryInsert(tx);
