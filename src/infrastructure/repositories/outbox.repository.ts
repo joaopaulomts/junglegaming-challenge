@@ -24,7 +24,7 @@ export class OutboxRepository {
 		const rows = await this.em.execute(
 			`SELECT * FROM outbox_messages
 			 WHERE published_at IS NULL
-			   AND (next_attempt_at IS NULL OR next_attempt_at <= $1)
+			   AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
 			 ORDER BY occurred_at ASC
 			 LIMIT ${limit}
 			 FOR UPDATE SKIP LOCKED`,

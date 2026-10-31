@@ -19,7 +19,7 @@ export class InboxRepository {
 		const now = new Date();
 		await this.em.execute(
 			`INSERT INTO inbox_messages (message_id, consumer_name, payload_hash, received_at)
-			 VALUES ($1, $2, $3, $4)
+			 VALUES (?, ?, ?, ?)
 			 ON CONFLICT (consumer_name, message_id) DO NOTHING`,
 			[messageId, consumerName, payloadHash, now],
 		);
